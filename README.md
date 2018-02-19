@@ -85,7 +85,7 @@ optional arguments:
 ```
 ## Demonstration
 
-A video demonstration of the ``goldrusher.py`` tool is available under [demo/goldrusher_demo.m4v](https://github.com/aleisalem/goldrusher/demo/goldrusher_demo.m4v).
+A video demonstration of the ``goldrusher.py`` tool is available under [demo/goldrusher_demo.m4v](https://github.com/aleisalem/GoldRusher/blob/master/demo/goldrusher_demo.m4v).
 
 ## Citation and Contact
 
