@@ -89,10 +89,16 @@ A video demonstration of the ``goldrusher.py`` tool is available under [demo/gol
 
 ## Citation and Contact
 
-For more information about the design and implementation of the tool, please refer to the **To appear** paper. Kindly cite GoldRusher paper, if you mention the tool in your paper. :)
+For more information about the design and implementation of the tool, please refer to the paper cited below. Kindly consider citing our GoldRusher paper, if you find it useful in your research.
 
 ```
-Citation coming soon.
-```
+@InProceedings{SANER18p517,
+  author    = {Aleieldin Salem},
+  title     = {GoldRusher: A Miner for Rapid Identification of Hidden Code},
+  booktitle = {Proc.\ SANER},
+  publisher = {IEEE},
+  pages     = {517--521},
+  year      = {2018},
+}```
 
 Please contact me via [salem@in.tum.de](mailto:salem@in.tum.de) if you have any questions with regard to that tool and its operation.
