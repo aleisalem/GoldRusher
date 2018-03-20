@@ -99,6 +99,7 @@ For more information about the design and implementation of the tool, please ref
   publisher = {IEEE},
   pages     = {517--521},
   year      = {2018},
-}```
+}
+```
 
 Please contact me via [salem@in.tum.de](mailto:salem@in.tum.de) if you have any questions with regard to that tool and its operation.
