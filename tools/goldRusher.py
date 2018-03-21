@@ -71,16 +71,16 @@ def main():
         run = 0
         args, stdArgs = [], []
         functions, lines, ltrace, ltracePC = {}, {}, {}, {}
-        binaryArgs = [ba.replace(' ', '') for ba in arguments.arg] if len(arguments.arg) > 0 else [] # Retrieve the number and types of program arguments
-        binaryOpts = [bo.lstrip() for bo in arguments.opt] if len(arguments.opt) > 0 else []
+        binaryArgs = [ba.replace(' ', '') for ba in arguments.arg] if arguments.arg else [] # Retrieve the number and types of program arguments
+        binaryOpts = [bo.lstrip() for bo in arguments.opt] if arguments.opt  else []
         if len(binaryArgs) != len(binaryOpts):
              prettyPrint("The number of options (%s) and that of arguments (%s) are not equal" % (len(binaryOpts), len(binaryArgs)), "error")
              return False
         # Run the binary <numruns> number of times and record output
         while run < arguments.numruns:
             run += 1
+            randomArgs = []
             if len(binaryArgs) > 0 and len(binaryOpts) > 0:
-                randomArgs = []
                 for index in range(len(binaryArgs)):
                     bOpt = "" if binaryOpts[index] == "none" else binaryOpts[index]
                     connector = arguments.connector if binaryOpts[index] != "none" else ""
@@ -103,68 +103,74 @@ def main():
 
                 args.append(randomArgs) # Keep track of used inputs for later use
                 
-                # Call the binary
-                prettyPrint("Calling the binary \"%s.inst\", run # %s" % (arguments.target, run))
-                curDir = os.getcwd() # Save the current directory
-                argsList = ["%s/%s.inst" % (curDir, arguments.target)] + randomArgs
-                os.chdir(arguments.codecoverage)
-                if VERBOSE:
-                    prettyPrint("Command: %s" % " ".join(argsList), "debug", False)
-                # Run the instrumented binary
-                p = subprocess.Popen(argsList, stderr=subprocess.STDOUT, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
-                # Does the program need inputs during execution
-                stdinput = arguments.stdinput
-                if stdinput == "int":
-                    x = getRandomNumber()
-                    binaryOutput = p.communicate(input=b'%s\n' % x)[0]
-                elif stdinput == "float":
-                    x = "%s.%s" % (getRandomNumber() , getRandomNumber())
-                    binaryOutput = p.communicate(input=b'%s\n' % x)[0]
-                elif stdinput == "str":
-                    x = getRandomAlphaNumeric()
-                    binaryOutput = p.communicate(input=b'%s\n' % x)[0]
-                elif stdinput == "char":
-                    x = getRandomAlphaNumeric(length=1)
-                    binaryOutput = p.communicate(input=b'%s\n' % x)[0]
-                elif stdinput == "hash":
-                    x = getRandomHash("sha1")
-                    binaryOutput = p.communicate(input=b'%s\n' % x)[0]
-                else:
-                    x = "none"
-                    binaryOutput = p.communicate()[0]
-                # Add stdinput to be used with ltrace
-                stdArgs.append(x)
+            # Call the binary
+            prettyPrint("Calling the binary \"%s.inst\", run # %s" % (arguments.target, run))
+            curDir = os.getcwd() # Save the current directory
+            argsList = ["%s/%s.inst" % (curDir, arguments.target)] + randomArgs
+            os.chdir(arguments.codecoverage)
+            if VERBOSE:
+                prettyPrint("Command: %s" % " ".join(argsList), "debug", False)
+            # Run the instrumented binary
+            p = subprocess.Popen(argsList, stderr=subprocess.STDOUT, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+            # Does the program need inputs during execution
+            stdinput = arguments.stdinput
+            if stdinput == "int":
+                x = getRandomNumber()
+                binaryOutput = p.communicate(input=b'%s\n' % x)[0]
+            elif stdinput == "float":
+                x = "%s.%s" % (getRandomNumber() , getRandomNumber())
+                binaryOutput = p.communicate(input=b'%s\n' % x)[0]
+            elif stdinput == "str":
+                x = getRandomAlphaNumeric()
+                binaryOutput = p.communicate(input=b'%s\n' % x)[0]
+            elif stdinput == "char":
+                x = getRandomAlphaNumeric(length=1)
+                binaryOutput = p.communicate(input=b'%s\n' % x)[0]
+            elif stdinput == "hash":
+                x = getRandomHash("sha1")
+                binaryOutput = p.communicate(input=b'%s\n' % x)[0]
+            else:
+                x = "none"
+                binaryOutput = p.communicate()[0]
+            # Add stdinput to be used with ltrace
+            stdArgs.append(x)
               
-                if binaryOutput.lower().find("code coverage") == -1:
-                    prettyPrint("No output received from codeCoverage. Skipping", "warning")
-                    os.chdir(curDir)
-                    continue
-                # Insert info about the testcase
-                testCaseFile = open("%s/%s_testcase%s_%s.txt" % (outDir, targetBinary, run, str(int(time.time()))), "w")
-                testCaseFile.write(binaryOutput)
-                testCaseFile.close()
-                goldDB.insert("Testcases", ["tcExecutable", "tcArgTypes", "tcArgValues", "tcCoverage"], [targetHash, ",".join(binaryArgs), ",".join(randomArgs), testCaseFile.name])
-                prettyPrint("Parsing the output")
-                functions, lines = parseCCOutput(binaryOutput, functions, lines)
-                # Update app functions
-                for f in functions.keys():
-                    # Check whether function exists
-                    fx, fl = (f.split(", ")[0], f.split(", ")[1]) if len(f.split(", ")) > 1 else (f, "")
-                    results = goldDB.select([], "Functions", [("fName", fx), ("fExecutable", targetHash)])
-                    if len(results.fetchall()) < 1:
-                        goldDB.insert("Functions", ["fName", "fExecutable"], [fx, targetHash])
+            if binaryOutput.lower().find("code coverage") == -1:
+                prettyPrint("No output received from codeCoverage. Skipping", "warning")
                 os.chdir(curDir)
+                continue
+            # Insert info about the testcase
+            testCaseFile = open("%s/%s_testcase%s_%s.txt" % (outDir, targetBinary, run, str(int(time.time()))), "w")
+            testCaseFile.write(binaryOutput)
+            testCaseFile.close()
+            goldDB.insert("Testcases", ["tcExecutable", "tcArgTypes", "tcArgValues", "tcCoverage"], [targetHash, ",".join(binaryArgs), ",".join(randomArgs), testCaseFile.name])
+            prettyPrint("Parsing the output")
+            functions, lines = parseCCOutput(binaryOutput, functions, lines)
+            # Update app functions
+            for f in functions.keys():
+                # Check whether function exists
+                fx, fl = (f.split(", ")[0], f.split(", ")[1]) if len(f.split(", ")) > 1 else (f, "")
+                results = goldDB.select([], "Functions", [("fName", fx), ("fExecutable", targetHash)])
+                if len(results.fetchall()) < 1:
+                    goldDB.insert("Functions", ["fName", "fExecutable"], [fx, targetHash])
+            os.chdir(curDir)
 
         # Step 3 - Call "ltrace" to find locations of libraries
         prettyPrint("Running \"ltrace\" with previous inputs")
-        for index in range(len(args)):
-            argsList = ["ltrace", "-itttC", "./%s" % arguments.target] + args[index]
-            p = subprocess.Popen(argsList, stderr=subprocess.STDOUT, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
-            ltraceOutput = p.communicate(input=b'%s\n' % stdArgs[index])[0]
-            if len(ltraceOutput) < 1:
-                prettyPrint("ltrace did not generate any outputs", "warning")
+        for index in range(int(arguments.numruns)):
+            if len(args) > 0:
+                argsList = ["ltrace", "-itttC", "./%s" % arguments.target] + args[index]
             else:
-                ltracePC = parseLtracePCOutput(ltraceOutput, ltracePC)
+                argsList = ["ltrace", "-itttC", "./%s" % arguments.target]
+        # Start the process
+        p = subprocess.Popen(argsList, stderr=subprocess.STDOUT, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+        ltraceOutput = p.communicate(input=b'%s\n' % stdArgs[index])[0]
+
+        # Parser ltrace output   
+        if len(ltraceOutput) < 1:
+            prettyPrint("ltrace did not generate any outputs", "warning")
+        else:
+            ltracePC = parseLtracePCOutput(ltraceOutput, ltracePC)
     
         # Step 4 - Retrieve least called functions/blocks and plot them
         reportString, reportFile = "", open("%s/report_%s_%sruns_%s.txt" % (outDir, targetBinary, arguments.numruns, str(int(time.time()))), "w")
@@ -194,17 +200,21 @@ def main():
         
         # Step 5 - Call "ltrace" and rank library calls
         prettyPrint("Running \"ltrace\" with previous inputs")
-        for index in range(len(args)):
-            argsList = ["ltrace", "-cC", "./%s" % arguments.target] + args[index]
-            if VERBOSE:
-                prettyPrint("Command: %s" % " ".join(argsList), "debug", False)
-                reportString += "Command: %s" % " ".join(argsList)
-                p =  subprocess.Popen(argsList, stderr=subprocess.STDOUT, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
-                ltraceOutput = p.communicate(input=b'%s\n' % stdArgs[index])[0]
-            if len(ltraceOutput) < 1:
-                prettyPrint("ltrace did not generate any output", "warning")
+        for index in range(int(arguments.numruns)):
+            if len(args) > 0:
+                argsList = ["ltrace", "-cC", "./%s" % arguments.target] + args[index]
             else:
-                ltrace = parseLtraceOutput(ltraceOutput, ltrace)
+                argsList = ["ltrace", "-cC", "./%s" % arguments.target]
+        # Start the process
+        p = subprocess.Popen(argsList, stderr=subprocess.STDOUT, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+        ltraceOutput = p.communicate(input=b'%s\n' % stdArgs[index])[0]
+       
+        # Parser output
+        if len(ltraceOutput) < 1:
+            prettyPrint("ltrace did not generate any output", "warning")
+        else:
+            ltrace = parseLtraceOutput(ltraceOutput, ltrace)
+
         # Plot the frequency of library/system calls
         reportString += printCalls(ltrace, run, threshold=arguments.hiddenthreshold)
         # Update executable details to include end timestamp
