@@ -157,20 +157,20 @@ def main():
 
         # Step 3 - Call "ltrace" to find locations of libraries
         prettyPrint("Running \"ltrace\" with previous inputs")
-        for index in range(int(arguments.numruns)):
+        for index in range(arguments.numruns):
             if len(args) > 0:
                 argsList = ["ltrace", "-itttC", "./%s" % arguments.target] + args[index]
             else:
                 argsList = ["ltrace", "-itttC", "./%s" % arguments.target]
-        # Start the process
-        p = subprocess.Popen(argsList, stderr=subprocess.STDOUT, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
-        ltraceOutput = p.communicate(input=b'%s\n' % stdArgs[index])[0]
+            # Start the process
+            p = subprocess.Popen(argsList, stderr=subprocess.STDOUT, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+            ltraceOutput = p.communicate(input=b'%s\n' % stdArgs[index])[0] if stdArgs[index] != "none" else p.communicate()[0]
 
-        # Parser ltrace output   
-        if len(ltraceOutput) < 1:
-            prettyPrint("ltrace did not generate any outputs", "warning")
-        else:
-            ltracePC = parseLtracePCOutput(ltraceOutput, ltracePC)
+            # Parser ltrace output   
+            if len(ltraceOutput) < 1:
+                prettyPrint("ltrace did not generate any outputs", "warning")
+            else:
+                ltracePC = parseLtracePCOutput(ltraceOutput, ltracePC)
     
         # Step 4 - Retrieve least called functions/blocks and plot them
         reportString, reportFile = "", open("%s/report_%s_%sruns_%s.txt" % (outDir, targetBinary, arguments.numruns, str(int(time.time()))), "w")
@@ -205,15 +205,15 @@ def main():
                 argsList = ["ltrace", "-cC", "./%s" % arguments.target] + args[index]
             else:
                 argsList = ["ltrace", "-cC", "./%s" % arguments.target]
-        # Start the process
-        p = subprocess.Popen(argsList, stderr=subprocess.STDOUT, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
-        ltraceOutput = p.communicate(input=b'%s\n' % stdArgs[index])[0]
+            # Start the process
+            p = subprocess.Popen(argsList, stderr=subprocess.STDOUT, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+            ltraceOutput = p.communicate(input=b'%s\n' % stdArgs[index])[0] if stdArgs[index] != "none" else p.communicate()[0]
        
-        # Parser output
-        if len(ltraceOutput) < 1:
-            prettyPrint("ltrace did not generate any output", "warning")
-        else:
-            ltrace = parseLtraceOutput(ltraceOutput, ltrace)
+            # Parser output
+            if len(ltraceOutput) < 1:
+                prettyPrint("ltrace did not generate any output", "warning")
+            else:
+                ltrace = parseLtraceOutput(ltraceOutput, ltrace)
 
         # Plot the frequency of library/system calls
         reportString += printCalls(ltrace, run, threshold=arguments.hiddenthreshold)
